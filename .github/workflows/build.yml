@@ -10,6 +10,26 @@ on:
     - cron: '0 */6 * * *'
 
 jobs:
+  build-ubuntu-20:
+    runs-on: ubuntu-20.04
+    env:
+      IMAGE_TAG: "ubuntu-20"
+    steps:
+      - uses: actions/checkout@v2
+#      - name: Docker Login
+#        run: echo ${{ secrets.DOCKER_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+      - name: Build Image
+        run: docker build -t steamcmd/steamcmd:$IMAGE_TAG .
+        working-directory: dockerfiles/${{ env.IMAGE_TAG }}
+      - name: Test Image
+        run: docker run steamcmd/steamcmd:$IMAGE_TAG +quit
+      # master
+      - name: Tag Image
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: for TAG in ubuntu latest; do docker tag steamcmd/steamcmd:$IMAGE_TAG steamcmd/steamcmd:${TAG}; done
+      - name: Push Image
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: for TAG in $IMAGE_TAG ubuntu latest; do docker push steamcmd/steamcmd:${TAG}; done
   build-ubuntu-18:
     runs-on: ubuntu-18.04
     env:
